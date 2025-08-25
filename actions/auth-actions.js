@@ -1,5 +1,9 @@
 'use server';
 
+import { hashUserPassword } from '@/lib/hash';
+import { createUser } from '@/lib/user';
+import { redirect } from 'next/navigation';
+
 // This file contains server actions for authentication
 
 export async function signup(prevState, formData) {
@@ -19,6 +23,19 @@ export async function signup(prevState, formData) {
   if (Object.keys(errors).length > 0) {
     return { errors };
   }
+
+  const hashedPassword = hashUserPassword(password);
+  try {
+    createUser(email, hashedPassword);
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      errors.email = 'A user with that email already exists.';
+      return { errors };
+    }
+    throw error;
+  }
+
+  redirect('/training');
 }
 
 export async function login(formData) {
